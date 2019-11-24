@@ -13,6 +13,10 @@ Substitute the values in `.env.example` and rename the file to `.env`
 ```bash
 node my_croneos_miner.js
 ```
+Or start with a process manager See ([see pm2](https://github.com/Unitech/pm2)).
+```bash
+pm2 start my_croneos_miner.js
+```
 
 ## Todo
 * load initial table state
