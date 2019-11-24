@@ -7,7 +7,7 @@ yarn
 ```
 
 ### Configuration
-Substitute the values in `.env.example` and rename the file to `.env`
+Substitute the values in `.env.example` and rename the file to `.env`. It's recommended to create a custom permission on your account and `linkauth` the `exec` action from the croneos contract if you plan running a miner on a server. Also you can opt to create a dedicated mining account and delegate CPU and NET to it.
 
 ### Start mining
 ```bash
