@@ -7,7 +7,7 @@ yarn
 ```
 
 ### Configuration
-Substitute the values in .env.example and rename the file to .env
+Substitute the values in `.env.example` and rename the file to `.env`
 
 ### Start mining
 ```bash
