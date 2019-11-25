@@ -48,6 +48,7 @@ class Miner {
       console.log(`Process existing cronjobs table (${this.cronjobs_table_data.length})`.grey);
       for(let i = 0; i < this.cronjobs_table_data.length; ++i){
         //need to implement concurrency, especially if few miners
+        //await is slower but that may be ok for the initial table state
         await this.scheduleExecution(this.cronjobs_table_data[i]);
       }
       this.cronjobs_table_data = [];
