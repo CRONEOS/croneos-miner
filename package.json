@@ -4,6 +4,7 @@
     "colors": "^1.4.0",
     "dotenv": "^8.2.0",
     "eosjs": "^20.0.0",
+    "long-timeout": "^0.1.1",
     "node-fetch": "^2.6.0",
     "ws": "^7.2.0"
   }
