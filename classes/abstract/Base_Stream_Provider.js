@@ -23,8 +23,8 @@ class Base_Stream_Provider {
     }
 
     check_if_provider_has_required_name(){
-      if(!this.name || this.name.length < 0){
-        throw new Error("Can't initialize a provider without name! Please pass in a string() name in to the constructor.");
+      if(!this.name || typeof this.name != "string" || this.name.length < 1){
+        throw new Error("Can't initialize a provider without name! Please pass in a string() name in to the super constructor.");
       }
       else{
         console.log(`Initialized Stream Provider ${this.name}`)
