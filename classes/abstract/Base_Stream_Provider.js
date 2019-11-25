@@ -9,9 +9,8 @@ class Base_Stream_Provider {
       this.name = provider_name;
       this.check_if_provider_has_required_name();
       this.emitter = new events.EventEmitter();
-      
     }
-  
+
     insert(x) {
       console.log('[stream] received','INS'.green, 'operation');
       this.emitter.emit('insert', x);

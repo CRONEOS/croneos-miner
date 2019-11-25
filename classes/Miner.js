@@ -24,21 +24,52 @@ class Miner {
           max_attempts: 10,
           attempt_delay: 250,
           log_error_attempts: false,
-          attempt_early: 2500
+          attempt_early: 2500,
+          process_initial_state: true
         }
         this.timers = new Map([]);
         this.opt = Object.assign(this.opt, options);
         this.init(streamProvider);
-
     }
+
     async init(streamProvider){
       if(!this.streamProvider){
-        //todo load initial table state...
         this.streamProvider = new streamProvider();
         this.start_listeners();
       }
-
+      if(this.opt.process_initial_state){
+        this.process_initial_table();
+      }
     }
+
+    async process_initial_table(){
+      this.cronjobs_table_data = [];
+      await this.getCronjobsTable();
+      console.log(`Process existing cronjobs table (${this.cronjobs_table_data.length})`.grey);
+      for(let i = 0; i < this.cronjobs_table_data.length; ++i){
+        //need to implement concurrency, especially if few miners
+        await this.scheduleExecution(this.cronjobs_table_data[i]);
+      }
+      this.cronjobs_table_data = [];
+    }
+
+    async getCronjobsTable(next_key=''){
+        let res = await api.rpc.get_table_rows({
+          json: true,
+          code: process.env.CRON_CONTRACT,
+          scope: process.env.CRON_CONTRACT,
+          table: "cronjobs",
+          limit: -1,
+          lower_bound : next_key
+        }).catch(e => {throw new Error("Error fetching initial table data")});
+
+        if(res && res.rows){
+          this.cronjobs_table_data = this.cronjobs_table_data.concat(res.rows);
+          if(res.more){
+            await this.getCronjobsTable(res.next_key);
+          }
+        }
+    } 
 
     start_listeners(){
         this.streamProvider.emitter.on('remove', (data) => {
@@ -46,39 +77,30 @@ class Miner {
             lt.clearTimeout(this.timers.get(id));
             this.timers.delete(id);
         });
-        this.streamProvider.emitter.on('insert', (data) => {
-            let exec_timer = this.scheduleExecution(data);
+        this.streamProvider.emitter.on('insert', async (data) => {
+            let exec_timer = await this.scheduleExecution(data);
             this.timers.set(data.id, exec_timer);
         });
         console.log(`Listening for table deltas...`.grey)
     }
 
-    scheduleExecution(table_delta_insertion){
-        //example
-        // { description: '',
-        // gas_fee: '0.0001 KASDAC',
-        // expiration: '2019-11-24T18:22:49',
-        // due_date: '2019-11-24T18:22:39',
-        // submitted: '2019-11-24T18:22:09',
-        // actions:
-        //  [ { data: '0568656c6c6f0000000099043055',
-        //      authorization: [Array],
-        //      name: 'newperiode',
-        //      account: 'dacelections' } ],
-        // tag: '',
-        // owner: 'piecesnbitss',
-        // id: 5 }
+    async scheduleExecution(table_delta_insertion){
+
         let due_date = Date.parse(table_delta_insertion.due_date + ".000+00:00"); //utc ms ;
         const job_id = table_delta_insertion.id;
     
         const now = new Date().getTime(); //(better use synced chain time)
-        if(due_date >= now){
+        
+        if(due_date > now){
+            //future job
             console.log("[schedule]".yellow, "job_id:", job_id, "due_date:", table_delta_insertion.due_date);
-
             return lt.setTimeout(()=>{
                 this.attempt_exec_sequence(job_id);
             }, due_date-now-this.opt.attempt_early);
-
+        }
+        else if(due_date <= now){
+          //immediate execution
+          await this._createTrx(job_id, true);
         }
     }
 
@@ -113,7 +135,7 @@ class Miner {
         }
     }
 
-    async _createTrx(jobid){
+    async _createTrx(jobid, broadcast=false){
         try {
             const trx = await api.transact(
               {
@@ -137,10 +159,16 @@ class Miner {
               {
                 blocksBehind: 3,
                 expireSeconds: 300,
-                broadcast: false
+                broadcast: broadcast
               }
             );
-            console.log('[create transaction]'.grey);
+            if(broadcast){
+              console.log(`[immediate execution] job_id: ${jobid} trx_id: ${trx.processed.id}`.grey);
+            }
+            else{
+              console.log(`[create transaction] job_id: ${jobid}`.grey);
+            }
+            
             return trx;
           } catch (e) {
             console.log('\nCaught exception: ' + e);
