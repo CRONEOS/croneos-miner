@@ -20,7 +20,6 @@ pm2 start my_croneos_miner.js
 ```
 
 ## Todo
-* load initial table state
 * add more table delta stream providers
 * Abstract out the exec scheduling in a separate class so that different scheduling logic can be used.
 
