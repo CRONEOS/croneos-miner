@@ -28,10 +28,18 @@ class Miner {
         }
         this.timers = new Map([]);
         this.opt = Object.assign(this.opt, options);
-        this.streamProvider = new streamProvider();
-        this.start_listeners();
+        this.init(streamProvider);
 
     }
+    async init(streamProvider){
+      if(!this.streamProvider){
+        //todo load initial table state...
+        this.streamProvider = new streamProvider();
+        this.start_listeners();
+      }
+
+    }
+
     start_listeners(){
         this.streamProvider.emitter.on('remove', (data) => {
             const id = data.id;
@@ -42,6 +50,7 @@ class Miner {
             let exec_timer = this.scheduleExecution(data);
             this.timers.set(data.id, exec_timer);
         });
+        console.log(`Listening for table deltas...`.grey)
     }
 
     scheduleExecution(table_delta_insertion){

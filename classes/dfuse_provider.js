@@ -9,7 +9,7 @@ const {createDfuseClient} = require("@dfuse/client");
 class dfuse_provider extends Base_Stream_Provider{
 
     constructor(){
-        super();
+        super("DFUSE");
         this.dfuse_api_key = process.env.DFUSE_API_KEY;
         this.dfuse_network = process.env.DFUSE_NETWORK;
         
