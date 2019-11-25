@@ -44,6 +44,9 @@ class dfuse_provider extends Base_Stream_Provider{
           });
           const stream =  await client.graphql(this.graphql_query, (message) => {
             // console.log(util.inspect(message, { showHidden: false, depth: null }) );
+
+            //wrap this in try catch block?
+
             if(!message.type=="data" || !message.data) return;
             if(!message.data.searchTransactionsForward) return;
             const trx_id = message.data.searchTransactionsForward.trace.id;
