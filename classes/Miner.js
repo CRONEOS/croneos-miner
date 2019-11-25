@@ -17,25 +17,32 @@ const api = new Api({
 
 class Miner {
 
-    constructor(streamProvider){
+    constructor(streamProvider, options={}){
+        this.opt = {
+          max_attempts: 10,
+          attempt_delay: 250,
+          log_error_attempts: false,
+          attempt_early: 2500
+        }
+        this.timers = new Map([]);
+        this.opt = Object.assign(this.opt, options);
         this.streamProvider = new streamProvider();
-        this.tries = 10;
-        this.attempt_delay = 250;
-        this.log_error_attempts = false;
         this.start_listeners();
 
     }
     start_listeners(){
         this.streamProvider.emitter.on('remove', (data) => {
-            // console.log('removed', data);
+            const id = data.id;
+            clearTimeout(this.timers.get(id));
+            this.timers.delete(id);
         });
         this.streamProvider.emitter.on('insert', (data) => {
-            // console.log('insert', data);
-            this.scheduleExecution(data);
+            let exec_timer = this.scheduleExecution(data);
+            this.timers.set(data.id, exec_timer);
         });
     }
 
-    async scheduleExecution(table_delta_insertion){
+    scheduleExecution(table_delta_insertion){
         //example
         // { description: '',
         // gas_fee: '0.0001 KASDAC',
@@ -56,28 +63,33 @@ class Miner {
         const now = new Date().getTime(); //(better use synced chain time)
         if(due_date >= now){
             console.log("[schedule]".yellow, "job_id:", job_id, "due_date:", table_delta_insertion.due_date);
-            //store the timer & job_id in a map to clear the timer when table delta received before execution
+
             return setTimeout(()=>{
                 this.attempt_exec_sequence(job_id);
-            }, due_date-now-2500);
+            }, due_date-now-this.opt.attempt_early);
+
         }
     }
 
     async attempt_exec_sequence(id){
         console.log("[exec attempt]".magenta, "job_id:", id);
-        let success = false;
+        let stop = false;
         const exec_trx = await this._createTrx(id);
     
-        for(let i=0; i < this.tries; ++i){
-            if(success) break;
+        for(let i=0; i < this.opt.max_attempts; ++i){
+            if(stop) break;
             api.rpc.push_transaction(exec_trx).then(res =>{
                     console.log("[EXECUTED]".green, "job_id:", id,"block_time:", res.processed.block_time, "trx_id:", res.processed.id );
-                    success = true;
+                    stop = true;
             })
             .catch(e => {
                 if (e instanceof RpcError){
-                    if(this.log_error_attempts){
-                        console.log('error attempt', i, e.json.error.details[0].message);
+                    const error_msg = e.json.error.details[0].message;
+                    if(this.opt.log_error_attempts){
+                        console.log('error attempt', i, error_msg);
+                    }
+                    if(error_msg.substr(46,3) == '006'){
+                      stop = true;
                     }
                 }
                 else{
@@ -85,7 +97,7 @@ class Miner {
                 }
             });
             await new Promise(resolve=>{
-                setTimeout(resolve, this.attempt_delay);
+                setTimeout(resolve, this.opt.attempt_delay);
             })
         }
     }
