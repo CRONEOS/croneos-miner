@@ -20,5 +20,7 @@ pm2 start my_croneos_miner.js
 
 ## Todo
 * load initial table state
-* respond to "remove" table deltas
 * add more table delta stream providers
+* FIX scheduled executions far away in the future >  2147483647 (2^31-1) (+-25 days). Need to replace setTimout with something else.
+
+for the last todo item. Use https://www.npmjs.com/package/big-time or https://github.com/tellnes/long-timeout to schedule work.
