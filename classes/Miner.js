@@ -2,6 +2,8 @@ const path = require('path');
 require('dotenv').config({path: path.join(__dirname, '../.env')});
 const colors = require('colors');
 
+const lt = require('long-timeout');
+
 const { Api, JsonRpc, RpcError } = require("eosjs");
 const {JsSignatureProvider}  = require('eosjs/dist/eosjs-jssig');
 const fetch = require("node-fetch");
@@ -33,7 +35,7 @@ class Miner {
     start_listeners(){
         this.streamProvider.emitter.on('remove', (data) => {
             const id = data.id;
-            clearTimeout(this.timers.get(id));
+            lt.clearTimeout(this.timers.get(id));
             this.timers.delete(id);
         });
         this.streamProvider.emitter.on('insert', (data) => {
@@ -64,7 +66,7 @@ class Miner {
         if(due_date >= now){
             console.log("[schedule]".yellow, "job_id:", job_id, "due_date:", table_delta_insertion.due_date);
 
-            return setTimeout(()=>{
+            return lt.setTimeout(()=>{
                 this.attempt_exec_sequence(job_id);
             }, due_date-now-this.opt.attempt_early);
 

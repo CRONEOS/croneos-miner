@@ -1,5 +1,6 @@
 # croneos-miner
 Basic nodejs miner for croneos. Atm there is only one stream provider (dfuse).
+The current miner makes use of https://github.com/tellnes/long-timeout to overcome the delay (>  2147483647 (2^31-1) (+-24.8 days) )limitation of the native setTimeout. (see todo)
 
 ## Install the dependencies
 ```bash
@@ -21,6 +22,5 @@ pm2 start my_croneos_miner.js
 ## Todo
 * load initial table state
 * add more table delta stream providers
-* FIX scheduled executions far away in the future >  2147483647 (2^31-1) (+-25 days). Need to replace setTimout with something else.
+* Abstract out the exec scheduling in a separate class so that different scheduling logic can be used.
 
-for the last todo item. Use https://www.npmjs.com/package/big-time or https://github.com/tellnes/long-timeout to schedule work.
