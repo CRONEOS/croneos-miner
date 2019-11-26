@@ -18,8 +18,9 @@ class dfuse_provider extends Base_Stream_Provider{
               query: "receiver:${process.env.CRON_CONTRACT} db.table:cronjobs/${process.env.CRON_CONTRACT}", 
               lowBlockNum: 0,
               cursor: $cursor,
-              liveMarkerInterval: 0
+              liveMarkerInterval: 15
               ) {
+              cursor
               trace {
                 id
                 matchingActions {
@@ -38,20 +39,22 @@ class dfuse_provider extends Base_Stream_Provider{
 
     async main() {
 
-        const client =  createDfuseClient({
-            apiKey: this.dfuse_api_key,
-            network: this.dfuse_network
-          });
-          const stream =  await client.graphql(this.graphql_query, (message) => {
-            // console.log(util.inspect(message, { showHidden: false, depth: null }) );
+        const client = createDfuseClient({
+          apiKey: this.dfuse_api_key,
+          network: this.dfuse_network
+        });
 
-            //wrap this in try catch block?
+        const stream =  await client.graphql(this.graphql_query, (message) => {
+          // console.log('\n',util.inspect(message, { showHidden: false, depth: null }) );
+          //wrap this in try catch block?
+          if(!message.type=="data" || !message.data) return;
+          if(!message.data.searchTransactionsForward) return;
 
-            if(!message.type=="data" || !message.data) return;
-            if(!message.data.searchTransactionsForward) return;
-            const trx_id = message.data.searchTransactionsForward.trace.id;
+          const cursor = message.data.searchTransactionsForward.cursor;
+          stream.mark({ cursor });
+          
+          if(message.data.searchTransactionsForward.trace!=null){
             const matchingActions = message.data.searchTransactionsForward.trace.matchingActions;
-            // console.log(trx_id, 'matchingActions', matchingActions.length);
             for(let i=0; i < matchingActions.length; ++i){
               const dbops = matchingActions[i].dbOps;
               if(dbops && dbops.length){
@@ -73,9 +76,11 @@ class dfuse_provider extends Base_Stream_Provider{
                 }
               }
             }
-          });
-          await stream.join();
-          await client.release();
+          }
+        });
+        //stream.mark({ cursor })
+        await stream.join();
+        await client.release();
     }
 }
 
