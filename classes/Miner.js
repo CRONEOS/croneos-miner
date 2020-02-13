@@ -4,7 +4,7 @@ const colors = require('colors');
 
 const lt = require('long-timeout');
 
-const { Api, JsonRpc, RpcError } = require("eosjs");
+const { Api, JsonRpc, RpcError, Serialize } = require("eosjs");
 const {JsSignatureProvider}  = require('eosjs/dist/eosjs-jssig');
 const fetch = require("node-fetch");
 const { TextEncoder, TextDecoder } = require("util");
@@ -16,6 +16,10 @@ const api = new Api({
   textDecoder: new TextDecoder(),
   textEncoder: new TextEncoder()
 });
+api.Serialize = Serialize;
+
+const {oracle_parser} = require('./oracle_parser.js');
+const oracle = new oracle_parser(api);
 
 class Miner {
 
@@ -75,12 +79,13 @@ class Miner {
     start_listeners(){
         this.streamProvider.emitter.on('remove', (data) => {
             const id = data.id;
-            lt.clearTimeout(this.timers.get(id));
+            lt.clearTimeout(this.timers.get(id).timer);
             this.timers.delete(id);
         });
         this.streamProvider.emitter.on('insert', async (data) => {
-            let exec_timer = await this.scheduleExecution(data);
-            this.timers.set(data.id, exec_timer);
+            let schedule_data = await this.scheduleExecution(data);
+            //this.timers.set(data.id, exec_timer);
+            this.timers.set(data.id, schedule_data );
         });
         console.log(`Listening for table deltas...`.grey)
     }
@@ -91,13 +96,24 @@ class Miner {
         const job_id = table_delta_insertion.id;
     
         const now = new Date().getTime(); //(better use synced chain time)
+
+        let oracle_conf = null;
+        if(table_delta_insertion.oracle_srcs.length != 0){
+          oracle_conf = {
+            oracle_srcs: table_delta_insertion.oracle_srcs,
+            account: table_delta_insertion.actions[0].account,
+            name: table_delta_insertion.actions[0].name
+          }
+        }
         
         if(due_date > now){
             //future job
             console.log("[schedule]".yellow, "job_id:", job_id, "due_date:", table_delta_insertion.due_date);
-            return lt.setTimeout(()=>{
+            let timer =  lt.setTimeout(()=>{
                 this.attempt_exec_sequence(job_id);
             }, due_date-now-this.opt.attempt_early);
+
+            return {timer: timer, oracle_conf: oracle_conf};
         }
         else if(due_date <= now){
           //immediate execution
@@ -153,6 +169,7 @@ class Miner {
                     data: {
                       id: jobid,
                       executer: process.env.MINER_ACC,
+                      scope: process.env.SCOPE
                     }
                   }
                 ]
