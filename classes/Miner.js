@@ -21,6 +21,10 @@ api.Serialize = Serialize;
 const {oracle_parser} = require('./oracle_parser.js');
 const oracle = new oracle_parser(api);
 
+
+
+
+
 class Miner {
 
     constructor(streamProvider, options={}){
@@ -31,7 +35,7 @@ class Miner {
           attempt_early: 2500,
           process_initial_state: true
         }
-        this.timers = new Map([]);
+        this.jobs = new Map([]);
         this.opt = Object.assign(this.opt, options);
         this.init(streamProvider);
     }
@@ -79,13 +83,20 @@ class Miner {
     start_listeners(){
         this.streamProvider.emitter.on('remove', (data) => {
             const id = data.id;
-            lt.clearTimeout(this.timers.get(id).timer);
-            this.timers.delete(id);
+            let job = this.jobs.get(id);
+            if(job != undefined){
+              lt.clearTimeout(job.timer);
+              this.jobs.delete(id);
+            }
+            else{
+              console.log("Remove job failed, id not found".orange);
+            }
         });
         this.streamProvider.emitter.on('insert', async (data) => {
             let schedule_data = await this.scheduleExecution(data);
-            //this.timers.set(data.id, exec_timer);
-            this.timers.set(data.id, schedule_data );
+            //this.jobs.set(data.id, exec_timer);
+            this.jobs.set(data.id, schedule_data );
+            // console.log(this.jobs);
         });
         console.log(`Listening for table deltas...`.grey)
     }
@@ -98,7 +109,7 @@ class Miner {
         const now = new Date().getTime(); //(better use synced chain time)
 
         let oracle_conf = null;
-        if(table_delta_insertion.oracle_srcs.length != 0){
+        if(table_delta_insertion.oracle_srcs.length ){
           oracle_conf = {
             oracle_srcs: table_delta_insertion.oracle_srcs,
             account: table_delta_insertion.actions[0].account,
@@ -122,10 +133,27 @@ class Miner {
     }
 
     async attempt_exec_sequence(id){
+
         console.log("[exec attempt]".magenta, "job_id:", id);
-        let stop = false;
+
+        let job = this.jobs.get(id);
+        if(job === undefined){
+          console.log("Error starting exec_sequence, job id not found".red);
+          return;
+        }
+        //todo check if its a oracle job
+        if(job.oracle_conf !== null){
+          let serialized_oracle_response = await oracle.get(job.oracle_conf);
+          console.log("oracle response ",serialized_oracle_response);
+          return;
+        }
+
+        return;
+
+
         const exec_trx = await this._createTrx(id);
-    
+
+        let stop = false;
         for(let i=0; i < this.opt.max_attempts; ++i){
             if(stop) break;
             api.rpc.push_transaction(exec_trx).then(res =>{

@@ -1,5 +1,6 @@
-//const path = require('path');
-//require('dotenv').config({path: path.join(__dirname, '../.env')});
+const path = require('path');
+require('dotenv').config({path: path.join(__dirname, '../.env')});
+const { TextEncoder, TextDecoder } = require("util");
 const fetch = require("node-fetch");
 var jp = require('jsonpath');
 
@@ -9,27 +10,50 @@ class oracle_parser {
     constructor(eosapi){
         console.log("Oracle parser initialized");
         this.api = eosapi;
-        let test = {api_url:"http://dummy.restapiexample.com/api/v1/employees", json_path:"$.data[:1].employee_salary"};
-        this.get(test)
     }
 
-    async get(oracle_srcs){
-
-        let res = this.checkResponseStatus(await fetch(oracle_srcs.api_url) );
+    async get(oracle_conf){
+        // oracle_conf = {
+        //     oracle_srcs: table_delta_insertion.oracle_srcs,
+        //     account: table_delta_insertion.actions[0].account,
+        //     name: table_delta_insertion.actions[0].name
+        //   }
+        let source_index = 0;
+        console.log("[oracle]".green, "fetching data", oracle_conf.oracle_srcs[source_index].api_url);
+        
+        let res = this.checkResponseStatus(await fetch(oracle_conf.oracle_srcs[source_index].api_url) );
         if(res === false) return;
         res = await res.json(); // console.log(res );
 
-        let needed = jp.query(res, oracle_srcs.json_path);
-
-        if(needed.length == 0){
-            needed = "";
+        if(oracle_conf.oracle_srcs[source_index].json_path != ""){
+            res = jp.query(res, oracle_conf.oracle_srcs[source_index].json_path);
         }
-        else if(needed.length == 1){
-            needed = needed[0];
-        }
-        //needed contains the required data, now cast data based on abi and serialize.
         
-        console.log(needed)
+
+        if(res.length == 0){
+            res = "";
+        }
+        else if(res.length == 1){
+            res = res[0];
+        }
+        //cast data based on abi and then serialize.
+        let fields = await this.getActionFields(oracle_conf.account, oracle_conf.name);
+        let data = {};
+        for(let i=0; i< fields.length; i++){
+            let field = fields[i];
+            console.log("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", field.name)
+            switch (field.name) {
+                case "executer":
+                    data["executer"] = process.env.MINER_ACC;
+                    break;
+                default:
+                    data[field.name] = Number(res);
+                    
+                    break;
+            }
+        }
+        let serialized_data = await  this.serializeActionData(oracle_conf.account, oracle_conf.name, data);
+        return serialized_data;
     }
 
     async serializeActionData(account, name, data) {
@@ -47,9 +71,30 @@ class oracle_parser {
         } 
         catch (e) {
           console.log(e);
+          return false; 
+        }
+    }
+
+    async getActionFields(account, name) {
+        try {
+            const abi = await this.api.getAbi(account);
+            // console.log(abi)
+            let {type} = abi.actions.find(aa => aa.name == name);
+            // console.log(type)
+            let struct = abi.structs.find(st => st.name == name || st.name == type);
+            if (struct) {
+                return struct.fields;
+            } else {
+                console.log(`fields not found for ${name}`.red);
+            }
+
+        } 
+        catch (e) {
+          console.log(e);
           return false;
         }
     }
+
     checkResponseStatus(res) {
         if (res.ok) { // res.status >= 200 && res.status < 300
             return res;

@@ -65,7 +65,7 @@ class dfuse_provider extends Base_Stream_Provider{
                         this.remove(dbop.oldJSON.object);
                         break;
                     case 'INS':
-                        // console.log(dbop.newJSON.object);
+                        //console.log(dbop.newJSON.object);
                         this.insert(dbop.newJSON.object);
                         break;
                   
