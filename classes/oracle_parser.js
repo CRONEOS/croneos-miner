@@ -41,18 +41,16 @@ class oracle_parser {
         let data = {};
         for(let i=0; i< fields.length; i++){
             let field = fields[i];
-            console.log("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz", field.name)
             switch (field.name) {
                 case "executer":
                     data["executer"] = process.env.MINER_ACC;
                     break;
                 default:
                     data[field.name] = Number(res);
-                    
                     break;
             }
         }
-        let serialized_data = await  this.serializeActionData(oracle_conf.account, oracle_conf.name, data);
+        let serialized_data = await this.serializeActionData(oracle_conf.account, oracle_conf.name, data);
         return serialized_data;
     }
 

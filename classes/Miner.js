@@ -55,9 +55,9 @@ class Miner {
       await this.getCronjobsTable();
       console.log(`Process existing cronjobs table (${this.cronjobs_table_data.length})`.grey);
       for(let i = 0; i < this.cronjobs_table_data.length; ++i){
-        //need to implement concurrency, especially if few miners
-        //await is slower but that may be ok for the initial table state
-        await this.scheduleExecution(this.cronjobs_table_data[i]);
+
+        let schedule_data = await this.scheduleExecution(this.cronjobs_table_data[i]);
+        this.jobs.set(this.cronjobs_table_data[i].id, schedule_data );
       }
       this.cronjobs_table_data = [];
     }
@@ -145,11 +145,8 @@ class Miner {
         if(job.oracle_conf !== null){
           let serialized_oracle_response = await oracle.get(job.oracle_conf);
           console.log("oracle response ",serialized_oracle_response);
-          return;
+          // return;
         }
-
-        return;
-
 
         const exec_trx = await this._createTrx(id);
 
