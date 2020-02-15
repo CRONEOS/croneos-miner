@@ -1,9 +1,8 @@
 /*
 This is a (mock) table delta provider for local testing only!
 A stream of table deltas is mocked by polling the table.
-It's not optimized to use in productionbundleRenderer.
+It's not optimized to use in production.
 */
-
 
 const path = require('path');
 require('dotenv').config({path: path.join(__dirname, '../.env')});
