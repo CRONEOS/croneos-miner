@@ -1,6 +1,9 @@
 const { Miner } = require("./classes/Miner");
 const { dfuse_provider } = require("./classes/dfuse_provider");
 
+//local use only!
+//const { polling_provider } = require("./classes/polling_provider");
+
 const options = {
   max_attempts: 10,
   attempt_delay: 300, //ms
@@ -11,3 +14,4 @@ const options = {
 };
 
 const my_croneos_miner = new Miner(dfuse_provider, options);
+

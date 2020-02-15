@@ -13,6 +13,7 @@ class dfuse_provider extends Base_Stream_Provider{
         this.dfuse_api_key = process.env.DFUSE_API_KEY;
         this.dfuse_network = process.env.DFUSE_NETWORK;
         
+        
         this.graphql_query = `subscription ($cursor: String) {
             searchTransactionsForward(
               query: "receiver:${process.env.CRON_CONTRACT} db.table:cronjobs/${process.env.CRON_CONTRACT}", 

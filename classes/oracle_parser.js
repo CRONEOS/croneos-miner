@@ -38,6 +38,8 @@ class oracle_parser {
         }
         //cast data based on abi and then serialize.
         let fields = await this.getActionFields(oracle_conf.account, oracle_conf.name);
+
+        //TODO better type casting
         let data = {};
         for(let i=0; i< fields.length; i++){
             let field = fields[i];
@@ -50,6 +52,8 @@ class oracle_parser {
                     break;
             }
         }
+        //end todo
+
         let serialized_data = await this.serializeActionData(oracle_conf.account, oracle_conf.name, data);
         return serialized_data;
     }
@@ -75,7 +79,7 @@ class oracle_parser {
 
     async getActionFields(account, name) {
         try {
-            const abi = await this.api.getAbi(account);
+            const abi = await this.api.getAbi(account);//will be cached by eosjs
             // console.log(abi)
             let {type} = abi.actions.find(aa => aa.name == name);
             // console.log(type)
@@ -85,7 +89,6 @@ class oracle_parser {
             } else {
                 console.log(`fields not found for ${name}`.red);
             }
-
         } 
         catch (e) {
           console.log(e);

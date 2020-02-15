@@ -89,7 +89,7 @@ class Miner {
               this.jobs.delete(id);
             }
             else{
-              console.log("Remove job failed, id not found".orange);
+              console.log("Job not found, already deleted.".orange);
             }
         });
         this.streamProvider.emitter.on('insert', async (data) => {
@@ -141,20 +141,22 @@ class Miner {
           console.log("Error starting exec_sequence, job id not found".red);
           return;
         }
-        //todo check if its a oracle job
+        //check if its a oracle job
+        let serialized_oracle_response = null;
         if(job.oracle_conf !== null){
-          let serialized_oracle_response = await oracle.get(job.oracle_conf);
+          serialized_oracle_response = await oracle.get(job.oracle_conf);
           console.log("oracle response ",serialized_oracle_response);
           // return;
         }
 
-        const exec_trx = await this._createTrx(id);
+        const exec_trx = await this._createTrx(id, false);
 
         let stop = false;
         for(let i=0; i < this.opt.max_attempts; ++i){
             if(stop) break;
             api.rpc.push_transaction(exec_trx).then(res =>{
                     console.log("[EXECUTED]".green, "job_id:", id,"block_time:", res.processed.block_time, "trx_id:", res.processed.id );
+                    this.jobs.delete(id); //should ALSO receive remove event to delete the job
                     stop = true;
             })
             .catch(e => {
@@ -163,7 +165,8 @@ class Miner {
                     if(this.opt.log_error_attempts){
                         console.log('error attempt', i, error_msg);
                     }
-                    if(error_msg.substr(46,3) == '006'){
+                    if(error_msg.substr(46,3) == '006'){ //006 id doesn't exist in cronjobs table -> already executed
+                      this.jobs.delete(id); //should ALSO receive remove event to delete the job
                       stop = true;
                     }
                 }
@@ -178,6 +181,7 @@ class Miner {
     }
 
     async _createTrx(jobid, broadcast=false){
+
         try {
             const trx = await api.transact(
               {
