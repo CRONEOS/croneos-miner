@@ -1,7 +1,7 @@
 /*
-This is a table delta provider for local testing only!
-It's not optimized to use as a real
-
+This is a (mock) table delta provider for local testing only!
+A stream of table deltas is mocked by polling the table.
+It's not optimized to use in productionbundleRenderer.
 */
 
 
