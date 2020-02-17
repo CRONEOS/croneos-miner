@@ -136,6 +136,7 @@ class oracle_parser {
         //this should be more advanced to also allow vector of primitive types and complex structs
         const floats = ['float32', 'float64','float128'];
         const ints = ['uint8','int8','uint16','int16','uint32','uint64','int64','int32','varuint32','varint32','uint128','int128'];
+        //const other = ['bytes', 'name', 'time_point', 'time_point_sec', 'block_timestamp_type', 'symbol_code', 'symbol', 'asset', 'checksum160', 'checksum256', 'checksum512', 'public_key', 'private_key', 'signature', 'extended_asset']
 
         if(ints.includes(type) ){
             return Number(value);
