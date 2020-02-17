@@ -89,16 +89,14 @@ class Miner {
               this.jobs.delete(id);
             }
             else{
-              console.log("Job not found, already deleted.".orange);
+              //console.log("Job not found, already deleted.".yellow);
             }
         });
         this.streamProvider.emitter.on('insert', async (data) => {
             let schedule_data = await this.scheduleExecution(data);
-            //this.jobs.set(data.id, exec_timer);
             this.jobs.set(data.id, schedule_data );
-            // console.log(this.jobs);
         });
-        console.log(`Listening for table deltas...`.grey)
+        console.log(`Listening for table deltas...`.grey);
     }
 
     async scheduleExecution(table_delta_insertion){
@@ -113,7 +111,8 @@ class Miner {
           oracle_conf = {
             oracle_srcs: table_delta_insertion.oracle_srcs,
             account: table_delta_insertion.actions[0].account,
-            name: table_delta_insertion.actions[0].name
+            name: table_delta_insertion.actions[0].name,
+            dummy_data: table_delta_insertion.actions[0].data
           }
         }
         
@@ -128,7 +127,12 @@ class Miner {
         }
         else if(due_date <= now){
           //immediate execution
-          await this._createTrx(job_id, true);
+          let serialized_oracle_response = null;
+          if(oracle_conf !== null){
+            serialized_oracle_response = await oracle.get(oracle_conf);
+            console.log("oracle response ",serialized_oracle_response);
+          }
+          await this._createTrx(job_id, serialized_oracle_response, true);
         }
     }
 
@@ -149,7 +153,7 @@ class Miner {
           // return;
         }
 
-        const exec_trx = await this._createTrx(id, false);
+        const exec_trx = await this._createTrx(id, serialized_oracle_response, false);
 
         let stop = false;
         for(let i=0; i < this.opt.max_attempts; ++i){
@@ -180,28 +184,33 @@ class Miner {
         }
     }
 
-    async _createTrx(jobid, broadcast=false){
+    async _createTrx(jobid, oracle_response=null, broadcast=false){
+        let exec_action = {
+            account: process.env.CRON_CONTRACT,
+            name: "exec",
+            authorization: [
+              {
+                actor: process.env.MINER_ACC,
+                permission: process.env.MINER_AUTH
+              }
+            ],
+            data: {
+              id: jobid,
+              executer: process.env.MINER_ACC,
+              scope: process.env.SCOPE,
+              oracle_response: ""
+            }
+        }
+
+        if(oracle_response !== null){
+          //todo update the exec action
+          exec_action.data.oracle_response = oracle_response;
+        }
 
         try {
             const trx = await api.transact(
               {
-                actions: [
-                  {
-                    account: process.env.CRON_CONTRACT,
-                    name: "exec",
-                    authorization: [
-                      {
-                        actor: process.env.MINER_ACC,
-                        permission: process.env.MINER_AUTH
-                      }
-                    ],
-                    data: {
-                      id: jobid,
-                      executer: process.env.MINER_ACC,
-                      scope: process.env.SCOPE
-                    }
-                  }
-                ]
+                actions: [exec_action]
               },
               {
                 blocksBehind: 3,

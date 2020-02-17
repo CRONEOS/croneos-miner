@@ -43,16 +43,24 @@ class oracle_parser {
         let data = {};
         for(let i=0; i< fields.length; i++){
             let field = fields[i];
+            // console.log(field)
             switch (field.name) {
+                case "response":
+                    data["response"] = this.castType(field.type, res);
+                    break;
                 case "executer":
                     data["executer"] = process.env.MINER_ACC;
                     break;
                 default:
-                    data[field.name] = Number(res);
                     break;
             }
         }
         //end todo
+        let dummy_data = await this.deserializeActionData(oracle_conf.account, oracle_conf.name, oracle_conf.dummy_data);
+
+        data = Object.assign(dummy_data, data);
+
+        console.log(data);
 
         let serialized_data = await this.serializeActionData(oracle_conf.account, oracle_conf.name, data);
         return serialized_data;
@@ -77,6 +85,25 @@ class oracle_parser {
         }
     }
 
+    async deserializeActionData(account, name, data) {
+        try {
+          const contract = await this.api.getContract(account);
+          let deserialized_data = this.api.Serialize.deserializeActionData(
+            contract,
+            account,
+            name,
+            data,
+            new TextEncoder(),
+            new TextDecoder()
+          );
+          return deserialized_data;
+        } 
+        catch (e) {
+          console.log(e);
+          return false; 
+        }
+    }
+    
     async getActionFields(account, name) {
         try {
             const abi = await this.api.getAbi(account);//will be cached by eosjs
@@ -103,6 +130,27 @@ class oracle_parser {
             console.log(`${res.statusText}`.red);
             return false;
         }
+    }
+
+    castType(type, value){
+        //this should be more advanced to also allow vector of primitive types and complex structs
+        const floats = ['float32', 'float64','float128'];
+        const ints = ['uint8','int8','uint16','int16','uint32','uint64','int64','int32','varuint32','varint32','uint128','int128'];
+
+        if(ints.includes(type) ){
+            return Number(value);
+        }
+        if(floats.includes(type) ){
+            return parseFloat(value);
+        }
+        if(type == 'bool'){
+            return Boolean(value);
+        }
+        if(type == 'string'){
+            return String(value);
+        }
+        //type not handled so return value as it is
+        return value;
     }
  
 }
