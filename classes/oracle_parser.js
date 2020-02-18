@@ -1,5 +1,4 @@
-const path = require('path');
-require('dotenv').config({path: path.join(__dirname, '../.env')});
+const CONF = require('../miner_config.json');
 const { TextEncoder, TextDecoder } = require("util");
 const fetch = require("node-fetch");
 var jp = require('jsonpath');
@@ -49,7 +48,7 @@ class oracle_parser {
                     data["response"] = this.castType(field.type, res);
                     break;
                 case "executer":
-                    data["executer"] = process.env.MINER_ACC;
+                    data["executer"] = CONF.miner_account;
                     break;
                 default:
                     break;

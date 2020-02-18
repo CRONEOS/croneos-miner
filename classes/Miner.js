@@ -1,15 +1,16 @@
+
 const path = require('path');
 require('dotenv').config({path: path.join(__dirname, '../.env')});
+const CONF = require('../miner_config.json');
 const colors = require('colors');
 
 const lt = require('long-timeout');
-
 const { Api, JsonRpc, RpcError, Serialize } = require("eosjs");
 const {JsSignatureProvider}  = require('eosjs/dist/eosjs-jssig');
 const fetch = require("node-fetch");
 const { TextEncoder, TextDecoder } = require("util");
-const signatureProvider = new JsSignatureProvider([process.env.MINER_PRIV_KEY]);
-const rpc = new JsonRpc(process.env.RPC_NODE, { fetch });
+const signatureProvider = new JsSignatureProvider([process.env.MINER_PK]);
+const rpc = new JsonRpc(CONF.rpc_nodes[0], { fetch });
 const api = new Api({
   rpc,
   signatureProvider,
@@ -20,9 +21,6 @@ api.Serialize = Serialize;
 
 const {oracle_parser} = require('./oracle_parser.js');
 const oracle = new oracle_parser(api);
-
-
-
 
 
 class Miner {
@@ -37,10 +35,12 @@ class Miner {
         }
         this.jobs = new Map([]);
         this.opt = Object.assign(this.opt, options);
+        this.permissions = [];
         this.init(streamProvider);
     }
 
     async init(streamProvider){
+      await this.validatePoolPermissions();
       if(!this.streamProvider){
         this.streamProvider = new streamProvider();
         this.start_listeners();
@@ -56,8 +56,17 @@ class Miner {
       console.log(`Process existing cronjobs table (${this.cronjobs_table_data.length})`.grey);
       for(let i = 0; i < this.cronjobs_table_data.length; ++i){
 
+        if(this.cronjobs_table_data[i].auth_bouncer != ""){
+          if(!this.permissions.includes(this.cronjobs_table_data[i].auth_bouncer)){
+            console.log("[DISCARD]".green, `Miner not authorized to process job (${this.cronjobs_table_data[i].id})`);
+            return;
+          }
+        }
+        
         let schedule_data = await this.scheduleExecution(this.cronjobs_table_data[i]);
-        this.jobs.set(this.cronjobs_table_data[i].id, schedule_data );
+        if(schedule_data){
+          this.jobs.set(this.cronjobs_table_data[i].id, schedule_data );
+        }
       }
       this.cronjobs_table_data = [];
     }
@@ -65,8 +74,8 @@ class Miner {
     async getCronjobsTable(next_key=''){
         let res = await api.rpc.get_table_rows({
           json: true,
-          code: process.env.CRON_CONTRACT,
-          scope: process.env.CRON_CONTRACT,
+          code: CONF.croneos_contract,
+          scope: CONF.scope,
           table: "cronjobs",
           limit: -1,
           lower_bound : next_key
@@ -93,6 +102,12 @@ class Miner {
             }
         });
         this.streamProvider.emitter.on('insert', async (data) => {
+            if(data.auth_bouncer != ""){
+              if(!this.permissions.includes(data.auth_bouncer) ){
+                console.log("[DISCARD]".green, `Miner not authorized to process job (${data.id})`);
+                return;
+              }
+            }
             let schedule_data = await this.scheduleExecution(data);
             this.jobs.set(data.id, schedule_data );
         });
@@ -123,7 +138,7 @@ class Miner {
                 this.attempt_exec_sequence(job_id);
             }, due_date-now-this.opt.attempt_early);
 
-            return {timer: timer, oracle_conf: oracle_conf};
+            return {timer: timer, auth_bouncer: table_delta_insertion.auth_bouncer, oracle_conf: oracle_conf };
         }
         else if(due_date <= now){
           //immediate execution
@@ -132,7 +147,8 @@ class Miner {
             serialized_oracle_response = await oracle.get(oracle_conf);
             console.log("oracle response ",serialized_oracle_response);
           }
-          await this._createTrx(job_id, serialized_oracle_response, true);
+          await this._createTrx(job_id, table_delta_insertion.auth_bouncer, serialized_oracle_response, true);
+          return false;
         }
     }
 
@@ -153,7 +169,7 @@ class Miner {
           // return;
         }
 
-        const exec_trx = await this._createTrx(id, serialized_oracle_response, false);
+        const exec_trx = await this._createTrx(id, job.auth_bouncer, serialized_oracle_response, false);
 
         let stop = false;
         for(let i=0; i < this.opt.max_attempts; ++i){
@@ -184,27 +200,31 @@ class Miner {
         }
     }
 
-    async _createTrx(jobid, oracle_response=null, broadcast=false){
+    async _createTrx(jobid, auth_bouncer="", oracle_response=null, broadcast=false){
         let exec_action = {
-            account: process.env.CRON_CONTRACT,
+            account: CONF.croneos_contract,
             name: "exec",
             authorization: [
               {
-                actor: process.env.MINER_ACC,
-                permission: process.env.MINER_AUTH
+                actor: CONF.miner_account,
+                permission: CONF.miner_auth
               }
             ],
             data: {
               id: jobid,
-              executer: process.env.MINER_ACC,
-              scope: process.env.SCOPE,
+              executer: CONF.miner_account,
+              scope: CONF.scope,
               oracle_response: ""
             }
         }
 
         if(oracle_response !== null){
-          //todo update the exec action
           exec_action.data.oracle_response = oracle_response;
+        }
+
+        if(auth_bouncer && auth_bouncer!= CONF.miner_account){
+          let p = CONF.mining_pool_permissions.find(mpp => mpp.actor = auth_bouncer);
+          exec_action.authorization.push(p);
         }
 
         try {
@@ -232,6 +252,49 @@ class Miner {
               console.log(JSON.stringify(e.json, null, 2));
             }
           }
+    }
+
+    async validatePoolPermissions(){
+      let pool_perms = CONF.mining_pool_permissions;
+      this.permissions.push(CONF.miner_account);
+      if(!pool_perms.length){
+        console.log("No mining pool permissions set.".yellow);
+        return;
+      }
+      let is_error = false;
+      for(let i=0; i< pool_perms.length; ++i){
+        let test = await this.isMinerAuthorizedForPool(CONF.miner_account, pool_perms[i] );
+        console.log('Validating pool permissions...'.yellow);
+        if(!test){
+          is_error = true;
+          console.log(`${pool_perms[i].actor}@${pool_perms[i].permission}`.red);
+        }
+        else{
+          console.log(`${pool_perms[i].actor}@${pool_perms[i].permission}`.green);
+          this.permissions.push(pool_perms[i].actor);
+        }
+      }
+
+      if(is_error){
+        throw `Miner account doesn't have one or more pool permissions.`
+      }
+    }
+
+    async isMinerAuthorizedForPool(miner, poolperm){
+      let res = await api.rpc.get_account(poolperm.actor).catch(e => false);
+      if (res) {
+        let perm = res.permissions.find(p => p.perm_name==poolperm.permission);
+        let permission = perm.required_auth.accounts.find(a => a.permission.actor == miner);
+        if(permission){
+          return true;
+        }
+        else{
+          return false;
+        }
+        
+      } else {
+        throw `Error getting pool account ${poolperm.actor}`;
+      }
     }
     
 }

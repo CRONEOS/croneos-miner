@@ -1,5 +1,6 @@
 const path = require('path');
 require('dotenv').config({path: path.join(__dirname, '../.env')});
+const CONF = require('../miner_config.json');
 const {Base_Stream_Provider} = require('./abstract/Base_Stream_Provider');
 global.fetch = require("node-fetch");
 global.WebSocket = require("ws");
@@ -12,11 +13,11 @@ class dfuse_provider extends Base_Stream_Provider{
         super("DFUSE");
         this.dfuse_api_key = process.env.DFUSE_API_KEY;
         this.dfuse_network = process.env.DFUSE_NETWORK;
-        
+
         
         this.graphql_query = `subscription ($cursor: String) {
             searchTransactionsForward(
-              query: "receiver:${process.env.CRON_CONTRACT} db.table:cronjobs/${process.env.CRON_CONTRACT}", 
+              query: "receiver:${CONF.croneos_contract} db.table:cronjobs/${CONF.scope}", 
               lowBlockNum: 0,
               cursor: $cursor,
               liveMarkerInterval: 15
@@ -25,7 +26,7 @@ class dfuse_provider extends Base_Stream_Provider{
               trace {
                 id
                 matchingActions {
-                  dbOps(code: "${process.env.CRON_CONTRACT}", table: "cronjobs") {
+                  dbOps(code: "${CONF.croneos_contract}", table: "cronjobs") {
                     operation
                     oldJSON { object error }
                     newJSON { object error }

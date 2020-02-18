@@ -4,13 +4,12 @@ A stream of table deltas is mocked by polling the table.
 It's not optimized to use in production.
 */
 
-const path = require('path');
-require('dotenv').config({path: path.join(__dirname, '../.env')});
+const CONF = require('../miner_config.json');
 const {Base_Stream_Provider} = require('./abstract/Base_Stream_Provider');
 
 const {JsonRpc, RpcError} = require("eosjs");
 const fetch = require("node-fetch");
-const rpc = new JsonRpc(process.env.RPC_NODE, { fetch });
+const rpc = new JsonRpc(CONF.rpc_nodes[0], { fetch });
 
 class polling_provider extends Base_Stream_Provider{
 
@@ -57,8 +56,8 @@ class polling_provider extends Base_Stream_Provider{
       while(more){
         let res = await rpc.get_table_rows({
           json: true,
-          code: process.env.CRON_CONTRACT,
-          scope: process.env.CRON_CONTRACT,
+          code: CONF.croneos_contract,
+          scope: CONF.scope,
           table: "cronjobs",
           limit: -1,
           lower_bound : next_key

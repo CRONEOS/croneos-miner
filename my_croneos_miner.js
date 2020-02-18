@@ -8,7 +8,7 @@ const options = {
   max_attempts: 10,
   attempt_delay: 300, //ms
   attempt_early: 2500, //ms
-  log_error_attempts: false,
+  log_error_attempts: true,
   process_initial_state: true
 
 };
