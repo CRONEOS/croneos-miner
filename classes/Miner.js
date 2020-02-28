@@ -5,12 +5,12 @@ const CONF = require('../miner_config.json');
 const colors = require('colors');
 
 const lt = require('long-timeout');
-const { Api, JsonRpc, RpcError, Serialize } = require("eosjs");
+const { Api, JsonRpc, RpcError, Serialize } = require("@jafri/eosjs2");
 const {JsSignatureProvider}  = require('eosjs/dist/eosjs-jssig');
 const fetch = require("node-fetch");
 const { TextEncoder, TextDecoder } = require("util");
 const signatureProvider = new JsSignatureProvider([process.env.MINER_PK]);
-const rpc = new JsonRpc(CONF.rpc_nodes[0], { fetch });
+const rpc = new JsonRpc(CONF.rpc_nodes, { fetch });
 const api = new Api({
   rpc,
   signatureProvider,

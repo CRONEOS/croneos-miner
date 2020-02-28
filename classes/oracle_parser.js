@@ -18,23 +18,23 @@ class oracle_parser {
         //     name: table_delta_insertion.actions[0].name
         //   }
         let source_index = 0;
-        console.log("[oracle]".green, "fetching data", oracle_conf.oracle_srcs[source_index].api_url);
+        console.log("[oracle]".green, oracle_conf.oracle_srcs[source_index].api_url);
         
         let res = this.checkResponseStatus(await fetch(oracle_conf.oracle_srcs[source_index].api_url) );
         if(res === false) return;
-        res = await res.json(); // console.log(res );
+        res = await res.json();
 
         if(oracle_conf.oracle_srcs[source_index].json_path != ""){
             res = jp.query(res, oracle_conf.oracle_srcs[source_index].json_path);
         }
         
-
         if(res.length == 0){
             res = "";
         }
         else if(res.length == 1){
             res = res[0];
         }
+
         //cast data based on abi and then serialize.
         let fields = await this.getActionFields(oracle_conf.account, oracle_conf.name);
 
@@ -44,12 +44,13 @@ class oracle_parser {
             let field = fields[i];
             // console.log(field)
             switch (field.name) {
-                case "response":
-                    data["response"] = this.castType(field.type, res);
-                    break;
                 case "executer":
                     data["executer"] = CONF.miner_account;
                     break;
+                case "response":
+                    data["response"] = this.castType(field.type, res);
+                    break;
+
                 default:
                     break;
             }
