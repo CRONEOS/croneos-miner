@@ -10,6 +10,7 @@ const {JsSignatureProvider}  = require('eosjs/dist/eosjs-jssig');
 const fetch = require("node-fetch");
 const { TextEncoder, TextDecoder } = require("util");
 const signatureProvider = new JsSignatureProvider([process.env.MINER_PK]);
+//todo randomize order of endpoints
 const rpc = new JsonRpc(CONF.rpc_nodes, { fetch });
 const api = new Api({
   rpc,

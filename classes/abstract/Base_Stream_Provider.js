@@ -1,3 +1,4 @@
+const CONF = require('../../miner_config.json');
 var events = require('events');
 
 class Base_Stream_Provider {
@@ -13,7 +14,14 @@ class Base_Stream_Provider {
 
     insert(x) {
       console.log('[stream] received','INS'.green, 'operation');
-      this.emitter.emit('insert', x);
+
+      if(this.gas_threshold_met(x.gas_fee) ){
+        this.emitter.emit('insert', x);
+      }
+      else{
+        console.log('[JOB]','ignore'.yellow, 'not enough gas');
+      }
+
     }
 
     remove(x) {
@@ -28,6 +36,20 @@ class Base_Stream_Provider {
       else{
         console.log(`Initialized Stream Provider ${this.name}`)
       }
+    }
+
+    gas_threshold_met(gas_fee){
+      let test = true;
+      if(CONF.gas_thresholds){
+        let [amount, symbol] = gas_fee.split(' ');
+        let threshold = CONF.gas_thresholds[symbol];
+        if(threshold !== undefined){
+          test = Number(amount) >= Number(threshold);
+          //console.log(Number(amount), ">=", Number(threshold))
+        }
+      }
+      return test;
+
     }
   
 }

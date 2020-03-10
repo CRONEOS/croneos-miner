@@ -15,7 +15,7 @@ class polling_provider extends Base_Stream_Provider{
 
     constructor(){
         super("POLLING");
-        this.interval = 1000;
+        this.interval = 1000*5;//ms
         this.cronjobs_data = [];
         this.main();
     }
@@ -61,7 +61,7 @@ class polling_provider extends Base_Stream_Provider{
           table: "cronjobs",
           limit: -1,
           lower_bound : next_key
-        }).catch(e => {throw new Error("Error fetching initial table data")});
+        }).catch(e => { console.log("Error fetching initial table data") } );
   
         if(res && res.rows){
           jobs = jobs.concat(res.rows);

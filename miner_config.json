@@ -4,5 +4,9 @@
     "miner_account": "cronbot11111",
     "miner_auth": "active",
     "mining_pool_permissions": [{"actor": "miningpool11", "permission": "miners"}],
-    "rpc_nodes": ["https://jungle.eosdac.io", "https://jungle.eossweden.org"]  
+    "rpc_nodes": ["https://jungle.eosdac.io", "https://jungle.eossweden.org"],
+    "gas_thresholds": {
+        "EOS": 0.0001,
+        "BOID": 0.9
+    }
 }
