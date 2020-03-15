@@ -37,6 +37,7 @@ class Miner {
         this.jobs = new Map([]);
         this.opt = Object.assign(this.opt, options);
         this.permissions = [];
+        this.miner_paused = false;
         this.init(streamProvider);
     }
 
@@ -172,6 +173,10 @@ class Miner {
 
         const exec_trx = await this._createTrx(id, job.auth_bouncer, serialized_oracle_response, false);
 
+        if(exec_trx === false){//miner is paused
+          return;
+        }
+
         let stop = false;
         for(let i=0; i < this.opt.max_attempts; ++i){
             if(stop) break;
@@ -202,6 +207,10 @@ class Miner {
     }
 
     async _createTrx(jobid, auth_bouncer="", oracle_response=null, broadcast=false){
+        if(this.miner_paused){
+          console.log('[Miner paused]'.yellow, `skipped execution of job ${jobid}`);
+          return false;
+        };
         let exec_action = {
             account: CONF.croneos_contract,
             name: "exec",
@@ -296,6 +305,17 @@ class Miner {
       } else {
         throw `Error getting pool account ${poolperm.actor}`;
       }
+    }
+
+    pause(){
+      this.miner_paused = true;
+      console.log(`[Miner paused]`.yellow);
+
+    }
+
+    resume(){
+      this.miner_paused = false;
+      console.log(`[Miner active]`.green);
     }
     
 }

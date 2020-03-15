@@ -15,3 +15,9 @@ const options = {
 
 const my_croneos_miner = new Miner(polling_provider, options);
 
+
+/*pause: the miner will skip execution of jobs. jobs will still be scheduled but the execution is halted.*/
+//my_croneos_miner.pause();
+
+/*resume: jobs will be executed*/
+//my_croneos_miner.resume();
