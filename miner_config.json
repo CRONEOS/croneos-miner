@@ -1,8 +1,0 @@
-{
-    "croneos_contract": "croncron1111",
-    "scope": "croncron1111",
-    "miner_account": "cronbot11111",
-    "miner_auth": "active",
-    "mining_pool_permissions": [{"actor": "miningpool11", "permission": "miners"}],
-    "rpc_nodes": ["https://jungle.eosdac.io", "https://jungle.eossweden.org"]  
-}
