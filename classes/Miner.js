@@ -6,7 +6,7 @@ const colors = require('colors');
 
 const lt = require('long-timeout');
 const { Api, JsonRpc, RpcError, Serialize } = require("@jafri/eosjs2");
-const {JsSignatureProvider}  = require('eosjs/dist/eosjs-jssig');
+const {JsSignatureProvider}  = require('@jafri/eosjs2/dist/eosjs-jssig');
 const fetch = require("node-fetch");
 const { TextEncoder, TextDecoder } = require("util");
 const signatureProvider = new JsSignatureProvider([process.env.MINER_PK]);
