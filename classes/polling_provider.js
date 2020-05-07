@@ -7,9 +7,9 @@ It's not optimized to use in production.
 const CONF = require('../miner_config.json');
 const {Base_Stream_Provider} = require('./abstract/Base_Stream_Provider');
 
-const {JsonRpc, RpcError} = require("eosjs");
+const {JsonRpc, RpcError} = require("@jafri/eosjs2");
 const fetch = require("node-fetch");
-const rpc = new JsonRpc(CONF.rpc_nodes[0], { fetch });
+const rpc = new JsonRpc(CONF.rpc_nodes, { fetch });
 
 class polling_provider extends Base_Stream_Provider{
 
