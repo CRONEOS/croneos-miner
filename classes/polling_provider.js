@@ -15,7 +15,7 @@ class polling_provider extends Base_Stream_Provider{
 
     constructor(){
         super("POLLING");
-        this.interval = 1000*5;//ms
+        this.interval = 1000*15;//ms
         this.cronjobs_data = [];
         this.main();
     }
