@@ -17,6 +17,7 @@ class polling_provider extends Base_Stream_Provider{
         super("POLLING");
         this.interval = 1000*15;//ms
         this.cronjobs_data = [];
+        this.max_job_mem_limit = 250// -1= unlimited;
         this.main();
     }
 
@@ -32,7 +33,7 @@ class polling_provider extends Base_Stream_Provider{
         const inSecondOnly = (list1, list2) => inFirstOnly(list2, list1);
 
         setInterval(async ()=>{
-          let new_table_data = await this.getCronjobsTable();
+          let new_table_data = await this.getCronjobsTable(); //await this.getCronjobsByDueDate(this.max_job_mem_limit);
           let new_rows = inFirstOnly(new_table_data, this.cronjobs_data);
           let old_rows = inSecondOnly(new_table_data, this.cronjobs_data);
 
@@ -72,18 +73,18 @@ class polling_provider extends Base_Stream_Provider{
       return jobs;
   }
   
-  async getCronjobsByDueDate(){
-    let next_key ='';
+  async getCronjobsByDueDate(limit){
+    let next_key =''; //todo
     let more = true;
     let jobs = [];
 
     while(more){
-      let res = await eos.api.rpc.get_table_rows({
+      let res = await rpc.get_table_rows({
         json: true,
         code: "cron.eos",
         scope: "cron.eos",
         table: "cronjobs",
-        limit: 200,
+        limit: limit,
         reverse: false,
         lower_bound : next_key,
         key_type: `i64`,
@@ -92,7 +93,7 @@ class polling_provider extends Base_Stream_Provider{
 
       if(res && res.rows){
         jobs = jobs.concat(res.rows);
-        more = false //res.more;
+        more = false //res.more; TODO
         next_key = res.next_key;
       }
     }
