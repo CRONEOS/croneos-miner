@@ -3,7 +3,7 @@
     "scope": "croncron1111",
     "miner_account": "cronbot11111",
     "miner_auth": "active",
-    "mining_pool_permissions": [{"actor": "miningpool11", "permission": "miners"}],
+    "mining_pool_permissions": [],
     "rpc_nodes": ["https://jungle.eossweden.org", "https://jungle2.cryptolions.io", "https://jungle.eosdac.io"],
     
     "gas_thresholds": {

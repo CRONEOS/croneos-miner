@@ -66,11 +66,39 @@ class polling_provider extends Base_Stream_Provider{
         if(res && res.rows){
           jobs = jobs.concat(res.rows);
           more = res.more;
+          next_key = res.next_key;
         }
       }
       return jobs;
+  }
+  
+  async getCronjobsByDueDate(){
+    let next_key ='';
+    let more = true;
+    let jobs = [];
 
-  } 
+    while(more){
+      let res = await eos.api.rpc.get_table_rows({
+        json: true,
+        code: "cron.eos",
+        scope: "cron.eos",
+        table: "cronjobs",
+        limit: 200,
+        reverse: false,
+        lower_bound : next_key,
+        key_type: `i64`,
+        index_position: 3 //by_due_date
+      }).catch(e => { console.log("Error fetching initial table data") } );
+
+      if(res && res.rows){
+        jobs = jobs.concat(res.rows);
+        more = false //res.more;
+        next_key = res.next_key;
+      }
+    }
+    return jobs;
+  }
+
 }
 
 module.exports = {
