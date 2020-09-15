@@ -1,0 +1,14 @@
+{
+    "croneos_contract": "croncron1111",
+    "scope": "croncron1111",
+    "miner_account": "cronbot11111",
+    "miner_auth": "active",
+    "mining_pool_permissions": [],
+    "rpc_nodes": ["https://jungle.eossweden.org", "https://jungle2.cryptolions.io", "https://jungle.eosdac.io"],
+    
+    "gas_thresholds": {
+        "EOS": 0.0001,
+        "BOID": 0.9,
+        "VIG": 0.0001
+    }
+}

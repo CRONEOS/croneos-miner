@@ -2,10 +2,11 @@
 .thumbs.db
 node_modules
 .env
+*miner_config.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
+ecosystem.config.js
 # Editor directories and files
 .idea
 .vscode
