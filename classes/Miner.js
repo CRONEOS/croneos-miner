@@ -117,7 +117,7 @@ class Miner {
     }
 
     async scheduleExecution(table_delta_insertion){
-
+        //console.log(table_delta_insertion);
         let due_date = Date.parse(table_delta_insertion.due_date + ".000+00:00"); //utc ms ;
         const job_id = table_delta_insertion.id;
     
@@ -187,7 +187,10 @@ class Miner {
             })
             .catch(e => {
                 if (e instanceof RpcError){
-                    const error_msg = e.json.error.details[0].message;
+                    const error_msg = "custom error";
+                    if(e.json){
+                      error_msg = e.json.error.details[0].message;
+                    }
                     if(this.opt.log_error_attempts){
                         console.log('error attempt', i, error_msg);
                     }
@@ -197,7 +200,7 @@ class Miner {
                     }
                 }
                 else{
-                    console.log('error');
+                    console.log('error', e);
                 }
             });
             await new Promise(resolve=>{

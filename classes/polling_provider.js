@@ -62,12 +62,12 @@ class polling_provider extends Base_Stream_Provider{
           table: "cronjobs",
           limit: -1,
           lower_bound : next_key
-        }).catch(e => { console.log("Error fetching initial table data") } );
+        }).catch(e => { console.log("Error fetching initial table data"); more = false; } );
   
         if(res && res.rows){
           jobs = jobs.concat(res.rows);
           more = res.more;
-          next_key = res.next_key;
+          next_key = res.next_key ? res.next_key : "";
         }
       }
       return jobs;
@@ -81,8 +81,8 @@ class polling_provider extends Base_Stream_Provider{
     while(more){
       let res = await rpc.get_table_rows({
         json: true,
-        code: "cron.eos",
-        scope: "cron.eos",
+        code: CONF.croneos_contract,
+        scope: CONF.croneos_contract,
         table: "cronjobs",
         limit: limit,
         reverse: false,
@@ -94,7 +94,7 @@ class polling_provider extends Base_Stream_Provider{
       if(res && res.rows){
         jobs = jobs.concat(res.rows);
         more = false //res.more; TODO
-        next_key = res.next_key;
+        next_key = res.next_key ? res.next_key : "";
       }
     }
     return jobs;

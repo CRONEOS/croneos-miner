@@ -1,6 +1,8 @@
 const { Miner } = require("./classes/Miner");
 //const { dfuse_provider } = require("./classes/dfuse_provider");
 
+const { hyperion_provider } = require("./classes/hyperion_provider");
+
 //local use only!
 const { polling_provider } = require("./classes/polling_provider");
 
@@ -13,7 +15,10 @@ const options = {
 
 };
 
-const my_croneos_miner = new Miner(polling_provider, options);
+//const my_croneos_miner = new Miner(polling_provider, options);
+
+const my_croneos_miner = new Miner(hyperion_provider, options);
+
 
 
 /*pause: the miner will skip execution of jobs. jobs will still be scheduled but the execution is halted.*/
