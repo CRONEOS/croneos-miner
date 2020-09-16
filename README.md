@@ -69,7 +69,6 @@ There is a manual step after pm2 startup you need to read the instructions.
 ```
 pm2 startup
 pm2 save
-
 ```
 ## Debugging
 watch the logs and make sure you don't see too many errors
