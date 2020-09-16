@@ -1,17 +1,16 @@
-//under args specify a valid provider (default is hyperion)
-// options are dfuse_provider hyperion_provider polling_provider
+
 const ms = require("human-ms");
 
 module.exports = {
   apps : [
     {
-      name: 'croneosMiner',
+      name: 'croneos-dfuser',
       script: 'croneosMiner.js',
       args: 'dfuse_provider',
       restart_delay: 0,
     },
     {
-      name: 'croneosMiner',
+      name: 'croneos-polling',
       script: 'croneosMiner.js',
       args: 'polling_provider',
       restart_delay: 0,
