@@ -14,8 +14,7 @@ if (process.argv[2]) {
         }
       }
     } catch (error) {
-      console.log(errro)
-
+      console.log(error)
       console.error(`Error: Not a valid provider name: ${process.argv[2]}`.red)
     }
 } else {

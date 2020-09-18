@@ -1,6 +1,10 @@
 # croneos-miner-boid
 Basic nodejs miner for croneos. 
 
+Join the CRONEOS Community: 
+
+https://t.me/croneos
+
 ## From a Fresh Ubuntu server
 Install Nodejs and PM2 
 ```
@@ -62,6 +66,19 @@ This file is a list of jobs to run in parallel. By default, the miner will run t
 ```
 pm2 start ecosystem.config.js
 ```
+## Open CRON token balance
+The claim action for CRON will fail if you don't already have a CRON balance or haven't called open on the contract. To open your account to receive CRON you should:
+
+Login with your account here:
+https://www.croneos.io/mine
+
+Or
+
+Call the open action directly here:
+
+https://bloks.io/account/token.cron?loadContract=true&tab=Actions&account=token.cron&scope=token.cron&limit=100&action=open
+
+
 ## Setup Autostart
 Ensure the croneos miner will be started again if the computer is rebooted. 
 
