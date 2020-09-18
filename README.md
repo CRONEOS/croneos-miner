@@ -9,6 +9,8 @@ https://t.me/croneos
 Install Nodejs and PM2 
 ```
 curl -sL https://deb.nodesource.com/setup_12.x -o nodesource_setup.sh
+sudo sh nodesource_setup.sh
+sudo apt-get install -y nodejs
 npm i -g pm2
 npm i -g yarn
 ```
