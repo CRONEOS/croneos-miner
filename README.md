@@ -56,7 +56,9 @@ It's recommended to create a custom permission on your account and linkauth the 
 
 ***MINER_PK:*** Provide your miner private key here, the same key assigned tot the miner_auth permission in miner_config.
 
-***DFUSE_API_KEY:*** You need a Dfuse API key, you can get a free key by making an account at dfuse.io and going to the 'API Keys' page.
+**Optional**
+
+***DFUSE_API_KEY:*** You can leave this blank when using the default eosnation dfuse endpoint.
 
 ### .ecosystem.config.js
 **Optional**
