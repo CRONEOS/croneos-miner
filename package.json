@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@dfuse/client": "^0.3.8",
+    "@dfuse/client": "^0.3.15",
     "@eosrio/hyperion-stream-client": "^0.3.6",
     "@jafri/eosjs2": "^21.0.0-rc.14",
     "colors": "^1.4.0",
