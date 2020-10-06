@@ -38,10 +38,15 @@ class dfuse_provider extends Base_Stream_Provider{
     }
 
     async main() {
-        const client = createDfuseClient({
-          apiKey: this.dfuse_api_key,
-          network: this.dfuse_network
-        });
+      var clientInit = {
+          network: this.dfuse_network        
+      }
+        if (this.dfuse_api_key) {
+          clientInit.apiKey = this.dfuse_api_key
+        } else {
+          clientInit.authentication = false
+        }
+        const client = createDfuseClient(clientInit);
 
         const stream =  await client.graphql(this.graphql_query, (message) => {
           // console.log('\n',util.inspect(message, { showHidden: false, depth: null }) );
