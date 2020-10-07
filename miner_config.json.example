@@ -29,7 +29,7 @@
       "endpoint": ""
     },
     "dfuse_provider": {
-      "endpoint": "mainnet.eos.dfuse.io"
+      "endpoint": "eos.dfuse.eosnation.io"
     }
   },
   "gas_thresholds": {
