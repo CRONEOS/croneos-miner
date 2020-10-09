@@ -9,6 +9,7 @@ const { Api, JsonRpc, RpcError, Serialize } = require("@jafri/eosjs2");
 const {JsSignatureProvider}  = require('@jafri/eosjs2/dist/eosjs-jssig');
 const fetch = require("node-fetch");
 const { TextEncoder, TextDecoder } = require("util");
+if(!process.env.MINER_PK) throw(Error("No private key specified in .env"))
 const signatureProvider = new JsSignatureProvider([process.env.MINER_PK]);
 //todo randomize order of endpoints
 const rpc = new JsonRpc(CONF.rpc_nodes, { fetch });
