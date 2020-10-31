@@ -187,7 +187,7 @@ class Miner {
             })
             .catch(e => {
                 if (e instanceof RpcError){
-                    const error_msg = "custom error";
+                    let error_msg = "custom error";
                     if(e.json){
                       error_msg = e.json.error.details[0].message;
                     }
